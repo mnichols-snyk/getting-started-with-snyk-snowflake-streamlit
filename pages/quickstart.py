@@ -1,39 +1,41 @@
+# Import Python Packages
 import streamlit as st
-import pandas as pd
-import datetime
 
-# NOTE: Table and fields names for demo purposes only, please refer to documentation and Snowflake for current specifications.
+
+# NOTE: Table and fields names for demo purposes only,
+# please refer to documentation and Snowflake for current specifications.
 
 
 # Load the table as a dataframe using the Snowpark Session.
 # Returns a Pandas DataFrame
 @st.cache_data
 def load_table():
-    return conn.query("SELECT * from ISSUES_V1;", ttl=600)
+#    return conn.query("SELECT * from ISSUES_V1;", ttl=600)
+    return conn.query("SELECT o.DISPLAY_NAME,p.NAME,i.PROBLEM_TITLE,i.SCORE,i.ISSUE_SEVERITY,i.ISSUE_STATUS,p.PROJECT_TAGS, p.PROJECT_COLLECTIONS from SNYK.SNYK.ISSUES__V_1_0 i INNER JOIN SNYK.SNYK.PROJECTS__V_1_0 p ON i.PROJECT_PUBLIC_ID = p.PUBLIC_ID INNER JOIN SNYK.SNYK.ORGS__V_1_0 o ON i.ORG_PUBLIC_ID = o.PUBLIC_ID ORDER BY SCORE DESC;", ttl=600)
 
 # Get the current credentials from secrets.toml
-conn = st.connection("snowflake") 
+conn = st.connection("snowflake")
 
 # Load data
 df = load_table()
 
 # Sidebar with options to filter data
 with st.sidebar:
-    st.title("Quick Start Dashboard")
+    st.title("Snyk Demo Quick Start Dashboard")
     st.write("This is a bit more complicated than the Getting Started page, but still pretty simple. \n\n You can filter the data by organization, project collection, project tags, and risk score. \n\n The data is then displayed in a table and simple bar chart.")
-    
+
     # Create filter by orgs option
-    orgs = df["ORG_NAME"].unique().tolist()
+    orgs = df["DISPLAY_NAME"].unique().tolist()
     selected_orgs = st.multiselect("Select Organizations out of " + str(len(orgs)) + " options" , orgs)
     if not selected_orgs:
-        selected_orgs = df["ORG_NAME"].unique()
+        selected_orgs = df["DISPLAY_NAME"].unique()
 
     # Filter by orgs selected
-    df = df[df["ORG_NAME"].isin(selected_orgs)]
+    df = df[df["DISPLAY_NAME"].isin(selected_orgs)]
 
     # Setting more filter options here by Snyk tags and Snyk project collections
     tags = df["PROJECT_TAGS"].unique().tolist()
-    collections = df["PROJECT_COLLECTION"].unique().tolist()
+    collections = df["PROJECT_COLLECTIONS"].unique().tolist()
     # Create streamlit multi select with options from Project Collections, Tags
     selected_collections = st.multiselect("Select Project Collections out of " + str(len(collections)) + " options" , collections)
     selected_tags = st.multiselect("Select Project Tags out of " + str(len(tags)) + " options" , tags)
@@ -50,10 +52,10 @@ with st.sidebar:
 
     # Filter df with selected collections, tags
     if not selected_collections:
-        selected_collections = df["PROJECT_COLLECTION"].unique()
+        selected_collections = df["PROJECT_COLLECTIONS"].unique()
     if not selected_tags:
         selected_tags = df["PROJECT_TAGS"].unique()
-    df = df[df["PROJECT_COLLECTION"].isin(selected_collections) & df["PROJECT_TAGS"].isin(selected_tags)]
+    df = df[df["PROJECT_COLLECTIONS"].isin(selected_collections) & df["PROJECT_TAGS"].isin(selected_tags)]
 
 # Bar Chart of Open and Resolved Issues
 # Count and display the number of open and resolved issues
@@ -66,4 +68,4 @@ st.title("Open vs Resolved Issues")
 st.bar_chart(data)
 
 # Show first 10 (note: this is not top 10) issues
-st.write(df.head(10))
+st.write(df.head(50))

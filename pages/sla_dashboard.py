@@ -1,7 +1,7 @@
 # Import python packages
+import datetime
 import streamlit as st
 import pandas as pd
-import datetime
 
 # NOTE: Table and fields names for demo purposes only, please refer to documentation and Snowflake for current specifications.
 
@@ -9,7 +9,8 @@ import datetime
 # Returns a Pandas DataFrame
 @st.cache_data
 def load_table():
-    return conn.query("SELECT * from ISSUES_V1;", ttl=600)
+#    return conn.query("SELECT * from ISSUES_V1;", ttl=600)
+    return conn.query("SELECT o.DISPLAY_NAME,p.NAME,i.PROBLEM_TITLE,i.SCORE,i.ISSUE_SEVERITY,i.ISSUE_STATUS,p.PROJECT_TAGS,p.PROJECT_COLLECTIONS,i.LAST_INTRODUCED,i.LAST_RESOLVED from SNYK.SNYK.ISSUES__V_1_0 i INNER JOIN SNYK.SNYK.PROJECTS__V_1_0 p ON i.PROJECT_PUBLIC_ID = p.PUBLIC_ID INNER JOIN SNYK.SNYK.ORGS__V_1_0 o ON i.ORG_PUBLIC_ID = o.PUBLIC_ID ORDER BY SCORE DESC;", ttl=600)
 
 # Get the current credentials
 conn = st.connection("snowflake")
@@ -18,21 +19,21 @@ df = load_table()
 
 # Write directly to the app
 with st.sidebar:
-    st.title("Shiv Enterprises - SLA Dashboard")
+    st.title("Snyk Demo Enterprises - SLA Dashboard")
     st.write("This is more complicated but a more realistic example of a possible SLA dashboard a customer may want to build")
 
     # Create filter by orgs option
-    orgs = df["ORG_NAME"].unique().tolist()
+    orgs = df["DISPLAY_NAME"].unique().tolist()
     selected_orgs = st.multiselect("Select Organizations out of " + str(len(orgs)) + " options" , orgs)
     if not selected_orgs:
-        selected_orgs = df["ORG_NAME"].unique()
+        selected_orgs = df["DISPLAY_NAME"].unique()
 
     # Filter by orgs selected
-    df = df[df["ORG_NAME"].isin(selected_orgs)]
+    df = df[df["DISPLAY_NAME"].isin(selected_orgs)]
 
     # Setting more filter options here by Snyk tags and Snyk project collections
     tags = df["PROJECT_TAGS"].unique().tolist()
-    collections = df["PROJECT_COLLECTION"].unique().tolist()
+    collections = df["PROJECT_COLLECTIONS"].unique().tolist()
     # Create streamlit multi select with options from Project Collections, Tags
     selected_collections = st.multiselect("Select Project Collections out of " + str(len(collections)) + " options" , collections)
     selected_tags = st.multiselect("Select Project Tags out of " + str(len(tags)) + " options" , tags)
@@ -54,10 +55,10 @@ with st.sidebar:
 
     # Filter df with selected collections, tags
     if not selected_collections:
-        selected_collections = df["PROJECT_COLLECTION"].unique()
+        selected_collections = df["PROJECT_COLLECTIONS"].unique()
     if not selected_tags:
         selected_tags = df["PROJECT_TAGS"].unique()
-    df = df[df["PROJECT_COLLECTION"].isin(selected_collections) & df["PROJECT_TAGS"].isin(selected_tags)]
+    df = df[df["PROJECT_COLLECTIONS"].isin(selected_collections) & df["PROJECT_TAGS"].isin(selected_tags)]
 
 st.title("SLA Targets")
 col1, col2, col3 = st.columns(3)
@@ -82,10 +83,10 @@ st.title("Open vs Resolved Issues")
 st.bar_chart(data)
 
 
-# Calculate Issue Age. 
-# For Open Issues - this code defines it as time between today and last introduced. 
+# Calculate Issue Age.
+# For Open Issues - this code defines it as time between today and last introduced.
 # For Resolved - this code defines it as time between LAST_RESOLVED and last_introduced
-# NOTE: This is not Snyk endorsed timing and not necessarily how our own reporting team defines it. 
+# NOTE: This is not Snyk endorsed timing and not necessarily how our own reporting team defines it.
 df["LAST_INTRODUCED"] = pd.to_datetime(df["LAST_INTRODUCED"])
 df["ISSUE_AGE"] = 0
 resolved_mask = df["ISSUE_STATUS"] == "Resolved"
@@ -97,13 +98,13 @@ open_closed_filter = st.radio("Select Issue Status Type ", ("Open", "Resolved"))
 df = df[df["ISSUE_STATUS"] == open_closed_filter]
 average_age = round(df["ISSUE_AGE"].mean())
 
-# Different ways to compare results by - can compare orgs, tags, or collections. 
+# Different ways to compare results by - can compare orgs, tags, or collections.
 # We could theoretically do this with any column
-group_options = ["ORG_NAME"]
+group_options = ["DISPLAY_NAME"]
 average_age_filter = group_options[0]
-if len(selected_collections) > 1: 
-    group_options.append("PROJECT_COLLECTION")
-if len(selected_tags) > 1: 
+if len(selected_collections) > 1:
+    group_options.append("PROJECT_COLLECTIONS")
+if len(selected_tags) > 1:
     group_options.append("PROJECT_TAGS")
 if len(group_options) > 1:
     average_age_filter = st.radio("GROUP BY: ", group_options)
@@ -151,10 +152,10 @@ st.scatter_chart(avg_age_df.set_index(average_age_filter))
 st.markdown("<h2>Average Age of "+open_closed_filter+" Issues: " + str(average_age) + " days </h2>", unsafe_allow_html=True)
 
 # Prepare data to show
-df["TIME_TO_BREACH_TEXT"] = df["TIME_TO_BREACH"].apply(lambda x: f"{abs(x)} days ago" if x < 0 else f"{x} days")
+df["TIME_TO_BREACH"] = df["TIME_TO_BREACH"].apply(lambda x: f"{abs(x)} days ago" if x < 0 else f"{x} days")
 st.title(f"Breached and At Risk Open Issues")
 with st.expander("Configure Table Settings"):
-    columns = st.multiselect("Columns:", df.columns, ["PROBLEM_TITLE", "ISSUE_SEVERITY", "SCORE", "PROJECT_NAME", "ISSUE_AGE", "SLA_BREACHED", "TIME_TO_BREACH_TEXT", "ISSUE_URL"])
+    columns = st.multiselect("Columns:", df.columns, ["PROBLEM_TITLE", "ISSUE_SEVERITY", "SCORE", "NAME", "ISSUE_AGE", "SLA_BREACHED", "TIME_TO_BREACH"])
     filter = st.radio("Choose by:", ("inclusion", "exclusion"))
 
     if filter == "exclusion":
@@ -183,6 +184,6 @@ def highlight_row(row):
         return ["background-color: lightcoral"] * len(row)
     else:
         return [""] * len(row)
-    
+
 # Display the selected page
 st.write(pages[page_number - 1].style.apply(highlight_row, axis=1))
