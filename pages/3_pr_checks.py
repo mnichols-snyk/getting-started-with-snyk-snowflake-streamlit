@@ -74,7 +74,7 @@ def get_gh_data():
                 # NOTE: See ~line 86 for a dummy implementation of the code_issues_caught column.
                 # counter = 0
 
-                # Check if the combined status' "statuses[i].context" contains either "code/snyk" or "security/snyk"
+                # Check if the combined status' "statuses[i].context" contains either "code/snyk" or "security/snyk"git 
                 for status in range(len(combined_status["statuses"])):
                     if "code/snyk" in combined_status["statuses"][status]["context"]:
                         # print the repo has code pr checks on
