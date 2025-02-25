@@ -33,6 +33,12 @@ To get started with this project, you'll need to follow these steps:
     client_session_keep_alive = true
     ```
 
+    Also add your GH Secret to a `.env` file in the root directory if you are using the PR Check dashboard. NOTE: You need a token with fine grained access for the PR Check dashboard. See `GH_Permissions.png` for permissions required for the token.
+
+    ```
+    GH_TOKEN=
+    ```
+
 3. Install `pipenv` if you haven't already. You can install it using the following command:
 
     ```shell
