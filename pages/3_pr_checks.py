@@ -30,7 +30,6 @@ gh_enterprise_repos = df[(df["ORIGIN"] == "github-enterprise")]["TARGET_DISPLAY_
 # remove any repos from gh_enterprise_repos that have the target value = None
 gh_enterprise_repos = [repo for repo in gh_enterprise_repos if repo is not None]
 
-
 @st.cache_data
 def get_gh_data():
     """
@@ -63,7 +62,7 @@ def get_gh_data():
         prs = gh.pulls.list(owner=orgOrOwner, repo=repo_name, state="all", sort="updated", direction="desc", per_page=20)
 
         # Each PR for a repo is converted into a row in new_df which will then be concatenated to prs_df (There's probably a better way to do this)
-        new_df = pd.DataFrame({"pr_ref": [pr["head"]["ref"] for pr in prs], "pr_link": [pr["html_url"] for pr in prs], "repo": [repo for _ in prs], "snyk_code_pr_checks": [False] * len(prs), "snyk_sca_pr_checks": [False] * len(prs)})
+        new_df = pd.DataFrame({"pr_ref": [pr["head"]["ref"] for pr in prs], "pr_link": [pr["html_url"] for pr in prs], "repo": [repo for _ in prs], "snyk_code_pr_checks": [False] * len(prs), "snyk_sca_pr_checks": [False] * len(prs), "sca_pr_check_success": [False] * len(prs), "sca_issues_caught": [False] * len(prs), "code_issues_caught": [False] * len(prs), "code_pr_check_success": [False] * len(prs)})
 
         # get combined status refs for each sha
         for i, pr in new_df.iterrows():
@@ -72,7 +71,7 @@ def get_gh_data():
                 combined_status = gh.repos.get_combined_status_for_ref(ref=pr["pr_ref"], owner=orgOrOwner, repo=repo_name)
                 
                 # NOTE: See ~line 86 for a dummy implementation of the code_issues_caught column.
-                # counter = 0
+                counter = 0
 
                 # Check if the combined status' "statuses[i].context" contains either "code/snyk" or "security/snyk"git 
                 for status in range(len(combined_status["statuses"])):
@@ -85,7 +84,7 @@ def get_gh_data():
                         new_df.loc[i, "code_pr_check_success"] = combined_status["statuses"][status]["state"]
 
                         # Record issues caught by Code PR Check
-                        num_issues_found = re.search('\d+\s+new\s+.+\s+issue', combined_status["statuses"][status]["description"])
+                        num_issues_found = re.search('\\d+\\s+new\\s+.+\\s+issue', combined_status["statuses"][status]["description"])
                         new_df.loc[i, "code_issues_caught"] = int(num_issues_found.group(1)) if num_issues_found else None
 
                         # NOTE: This basically gives dummy stats since I didn't have enough actual Snyk Code PR Checks at a time :P 
