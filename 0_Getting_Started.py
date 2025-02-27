@@ -1,20 +1,18 @@
 import streamlit as st
-#import pandas as pd
+# import pandas as pd
+from st_snowauth import snowauth_session
+
+# Initialize or confirm OAuth connection to Snowflake backend using your credentials
+session = snowauth_session()
 
 # NOTE: Table and fields names for demo purposes only,
 # please refer to documentation and Snowflake for current specifications.
 
 # Load the table as a dataframe using the Snowpark Session.
-# Returns a Pandas DataFrame
-@st.cache_data
-def load_table():
-    return conn.query("SELECT o.DISPLAY_NAME,p.NAME,i.PROBLEM_TITLE,i.SCORE,i.ISSUE_SEVERITY,i.ISSUE_STATUS,p.PROJECT_TAGS,p.PROJECT_COLLECTIONS from SNYK.SNYK.ISSUES__V_1_0 i INNER JOIN SNYK.SNYK.PROJECTS__V_1_0 p ON i.PROJECT_PUBLIC_ID = p.PUBLIC_ID INNER JOIN SNYK.SNYK.ORGS__V_1_0 o ON i.ORG_PUBLIC_ID = o.PUBLIC_ID ORDER BY SCORE DESC;", ttl=600)
+df_snowpark = session.sql("SELECT o.DISPLAY_NAME,p.NAME,i.PROBLEM_TITLE,i.SCORE,i.ISSUE_SEVERITY,i.ISSUE_STATUS,p.PROJECT_TAGS,p.PROJECT_COLLECTIONS from SNYK.SNYK.ISSUES__V_1_0 i INNER JOIN SNYK.SNYK.PROJECTS__V_1_0 p ON i.PROJECT_PUBLIC_ID = p.PUBLIC_ID INNER JOIN SNYK.SNYK.ORGS__V_1_0 o ON i.ORG_PUBLIC_ID = o.PUBLIC_ID ORDER BY SCORE DESC;")
 
-# Get the current credentials from secrets.toml
-conn = st.connection("snowflake")
-
-# Load data
-df = load_table()
+# Convert the Snowflake dataframe to a Pandas DataFrame
+df = df_snowpark.to_pandas()
 
 with st.sidebar:
     st.title("Getting Started")

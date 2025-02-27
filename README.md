@@ -18,7 +18,8 @@ For full Streamlit documentation, see [here](https://docs.streamlit.io/)
 To get started with this project, you'll need to follow these steps:
 
 1. Create a folder named `.streamlit` with a file `secrets.toml` from the root directory of this project. The full file path from the root should then be `.streamlit/secrets.toml`
-2. Define your Snowflake secrets in the `secrets.toml` file. Make sure to include the necessary credentials and connection details.
+2. Use the instructions found at https://medium.com/snowflake/snowflake-oauth-for-streamlit-e95e4cb3de6c to create a Snowflake OAuth Security Integration.
+3. Define your Snowflake secrets in the `secrets.toml` file. Make sure to include the necessary credentials and connection details as detailed from Step 2.
 
     It should look like this:
     ```
@@ -31,22 +32,44 @@ To get started with this project, you'll need to follow these steps:
     database = ""
     schema = ""
     client_session_keep_alive = true
+    [snowauth]
+    account = ""
+    authorization_endpoint = ""
+    token_endpoint = ""
+    redirect_uri = "http://localhost:8501"
+    client_id = ""
+    client_secret = ""
+    role = "DATA_SHARE_ROLE"
+
+    [connections.snowflake]
+    account = ""
+    user = ""
+    warehouse = ""
+    database = ""
+    schema = ""
+    client_session_keep_alive = true
     ```
 
-3. Install `pipenv` if you haven't already. You can install it using the following command:
+    Also add your GH Secret to a `.env` file in the root directory if you are using the PR Check dashboard. NOTE: You need a token with fine grained access for the PR Check dashboard. See `GH_Permissions.png` for permissions required for the token.
+
+    ```
+    GH_TOKEN=
+    ```
+
+4. Install `pipenv` if you haven't already. You can install it using the following command:
 
     ```shell
     pip install pipenv
     ```
 
-4. Once `pipenv` is installed, navigate to the project directory and run the following command to install the project dependencies:
+5. Once `pipenv` is installed, navigate to the project directory and run the following command to install the project dependencies:
 
     ```shell
     pipenv shell
     pipenv install
     ```
-5. After installing the prereq packages, run the streamlit app locally. Specify the dashboard you want to run. Example below:
+6. After installing the prereq packages, run the streamlit app locally. Specify the dashboard you want to run. Example below:
 
     ```shell
-    streamlit run get_started.py
+    streamlit run 0_Get_Started.py
     ```
